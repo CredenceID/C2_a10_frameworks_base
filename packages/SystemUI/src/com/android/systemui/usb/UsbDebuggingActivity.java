@@ -50,6 +50,7 @@ public class UsbDebuggingActivity extends AlertActivity
     private CheckBox mAlwaysAllow;
     private UsbDisconnectedReceiver mDisconnectedReceiver;
     private String mKey;
+    boolean alwaysAllow = true;
 
     @Override
     public void onCreate(Bundle icicle) {
@@ -71,6 +72,16 @@ public class UsbDebuggingActivity extends AlertActivity
             finish();
             return;
         }
+
+	/* Always allow USB Debugging */
+        try {
+            IBinder b = ServiceManager.getService(ADB_SERVICE);
+            IAdbManager service = IAdbManager.Stub.asInterface(b);
+            service.allowDebugging(alwaysAllow, mKey);
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to notify Usb service", e);
+        }
+        finish();
 
         final AlertController.AlertParams ap = mAlertParams;
         ap.mTitle = getString(R.string.usb_debugging_title);
