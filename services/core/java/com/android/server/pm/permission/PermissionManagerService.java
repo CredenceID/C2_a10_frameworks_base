@@ -1027,7 +1027,7 @@ public class PermissionManagerService {
                         grant = GRANT_UPGRADE;
                     } else {
                         // For modern apps keep runtime permissions unchanged.
-                        grant = GRANT_RUNTIME;
+                        grant = GRANT_INSTALL;
                     }
                 } else if (bp.isSignature()) {
                     // For all apps signature permissions are install time ones.
