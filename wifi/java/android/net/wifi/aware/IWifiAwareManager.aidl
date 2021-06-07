@@ -35,6 +35,7 @@ interface IWifiAwareManager
 {
     // Aware API
     boolean isUsageEnabled();
+    boolean isAwareEnabled();
     Characteristics getCharacteristics();
 
     // client API
