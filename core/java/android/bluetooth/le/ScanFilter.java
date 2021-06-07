@@ -76,6 +76,11 @@ public final class ScanFilter implements Parcelable {
     @Nullable
     private final byte[] mManufacturerDataMask;
 
+    @Nullable
+    private final TransportBlock mTransportBlock;
+    @Nullable
+    private final TransportBlock mTransportBlockMask;
+
     /** @hide */
     public static final ScanFilter EMPTY = new ScanFilter.Builder().build();
 
@@ -84,7 +89,8 @@ public final class ScanFilter implements Parcelable {
             ParcelUuid uuidMask, ParcelUuid solicitationUuid,
             ParcelUuid solicitationUuidMask, ParcelUuid serviceDataUuid,
             byte[] serviceData, byte[] serviceDataMask,
-            int manufacturerId, byte[] manufacturerData, byte[] manufacturerDataMask) {
+            int manufacturerId, byte[] manufacturerData, byte[] manufacturerDataMask,
+            TransportBlock transportBlock, TransportBlock transportBlockMask) {
         mDeviceName = name;
         mServiceUuid = uuid;
         mServiceUuidMask = uuidMask;
@@ -97,6 +103,8 @@ public final class ScanFilter implements Parcelable {
         mManufacturerId = manufacturerId;
         mManufacturerData = manufacturerData;
         mManufacturerDataMask = manufacturerDataMask;
+        mTransportBlock = transportBlock;
+        mTransportBlockMask = transportBlockMask;
     }
 
     @Override
@@ -155,6 +163,15 @@ public final class ScanFilter implements Parcelable {
             if (mManufacturerDataMask != null) {
                 dest.writeInt(mManufacturerDataMask.length);
                 dest.writeByteArray(mManufacturerDataMask);
+            }
+        }
+        dest.writeInt(mTransportBlock == null ? 0 : 1);
+        if (mTransportBlock != null) {
+            dest.writeParcelable(mTransportBlock, flags);
+
+            dest.writeInt(mTransportBlockMask == null ? 0 : 1);
+            if (mTransportBlockMask != null) {
+                dest.writeParcelable(mTransportBlockMask, flags);
             }
         }
     }
@@ -217,7 +234,6 @@ public final class ScanFilter implements Parcelable {
                     }
                 }
             }
-
             int manufacturerId = in.readInt();
             if (in.readInt() == 1) {
                 int manufacturerDataLength = in.readInt();
@@ -233,7 +249,17 @@ public final class ScanFilter implements Parcelable {
                             manufacturerDataMask);
                 }
             }
-
+            if (in.readInt() == 1) {
+                TransportBlock transportBlock = null;
+                TransportBlock transportBlockMask = null;
+                transportBlock =
+                    in.readParcelable(TransportBlock.class.getClassLoader());
+                if (in.readInt() == 1) {
+                    transportBlockMask =
+                        in.readParcelable(TransportBlock.class.getClassLoader());
+                }
+                builder.setTransportBlock(transportBlock, transportBlockMask);
+            }
             return builder.build();
         }
     };
@@ -312,6 +338,16 @@ public final class ScanFilter implements Parcelable {
         return mManufacturerDataMask;
     }
 
+    @Nullable
+    public TransportBlock getTransportBlock() {
+        return mTransportBlock;
+    }
+
+    @Nullable
+    public TransportBlock getTransportBlockMask() {
+        return mTransportBlockMask;
+    }
+
     /**
      * Check if the scan filter matches a {@code scanResult}. A scan result is considered as a match
      * if it matches all the field filters.
@@ -332,7 +368,8 @@ public final class ScanFilter implements Parcelable {
         // Scan record is null but there exist filters on it.
         if (scanRecord == null
                 && (mDeviceName != null || mServiceUuid != null || mManufacturerData != null
-                || mServiceData != null || mServiceSolicitationUuid != null)) {
+                || mServiceData != null || mServiceSolicitationUuid != null
+                || mTransportBlock != null)) {
             return false;
         }
 
@@ -369,6 +406,13 @@ public final class ScanFilter implements Parcelable {
                 return false;
             }
         }
+
+        // Transport block match.
+        if (mTransportBlock != null && !matchesTransportBlocks(mTransportBlock, mTransportBlockMask,
+                    scanRecord.getTransportBlocks())) {
+            return false;
+        }
+
         // All filters match.
         return true;
     }
@@ -395,6 +439,33 @@ public final class ScanFilter implements Parcelable {
         }
         return false;
     }
+
+    /**
+     * Check if the transport block is contained in a list of transport blocks
+     *
+     * @hide
+     */
+    public boolean matchesTransportBlocks(TransportBlock transportBlock,
+            TransportBlock transportBlockMask, List<TransportBlock> transportBlocks) {
+        if (transportBlock == null) {
+            return true;
+        }
+        if (transportBlocks == null) {
+            return false;
+        }
+        byte[] transpBlockBytes = transportBlock.getBytes();
+        byte[] transpBlockMaskBytes = transportBlockMask == null
+            ? null
+            : transportBlockMask.getBytes();
+        for (TransportBlock transpBlock : transportBlocks) {
+            if (matchesPartialData(transpBlockBytes, transpBlockMaskBytes,
+                    transpBlock.getBytes())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     // Check if the uuid pattern matches the particular service uuid.
     private static boolean matchesServiceUuid(UUID uuid, UUID mask, UUID data) {
@@ -463,7 +534,9 @@ public final class ScanFilter implements Parcelable {
                 + Arrays.toString(mServiceData) + ", mServiceDataMask="
                 + Arrays.toString(mServiceDataMask) + ", mManufacturerId=" + mManufacturerId
                 + ", mManufacturerData=" + Arrays.toString(mManufacturerData)
-                + ", mManufacturerDataMask=" + Arrays.toString(mManufacturerDataMask) + "]";
+                + ", mManufacturerDataMask=" + Arrays.toString(mManufacturerDataMask)
+                + ", mTransportBlock=" + mTransportBlock
+                + ", mTransportBlockMask=" + mTransportBlockMask + "]";
     }
 
     @Override
@@ -475,7 +548,8 @@ public final class ScanFilter implements Parcelable {
                 Arrays.hashCode(mServiceData),
                 Arrays.hashCode(mServiceDataMask),
                 mServiceUuid, mServiceUuidMask,
-                mServiceSolicitationUuid, mServiceSolicitationUuidMask);
+                mServiceSolicitationUuid, mServiceSolicitationUuidMask,
+                mTransportBlock, mTransportBlockMask);
     }
 
     @Override
@@ -499,7 +573,9 @@ public final class ScanFilter implements Parcelable {
                 && Objects.equals(mServiceUuidMask, other.mServiceUuidMask)
                 && Objects.equals(mServiceSolicitationUuid, other.mServiceSolicitationUuid)
                 && Objects.equals(mServiceSolicitationUuidMask,
-                        other.mServiceSolicitationUuidMask);
+                        other.mServiceSolicitationUuidMask)
+                && Objects.equals(mTransportBlock, other.mTransportBlock)
+                && Objects.equals(mTransportBlockMask, other.mTransportBlockMask);
     }
 
     /**
@@ -532,6 +608,9 @@ public final class ScanFilter implements Parcelable {
         private int mManufacturerId = -1;
         private byte[] mManufacturerData;
         private byte[] mManufacturerDataMask;
+
+        private TransportBlock mTransportBlock;
+        private TransportBlock mTransportBlockMask;
 
         /**
          * Set filter on device name.
@@ -671,6 +750,8 @@ public final class ScanFilter implements Parcelable {
 
         /**
          * Set filter on on manufacturerData. A negative manufacturerId is considered as invalid id.
+         * <p>
+         * Note the first two bytes of the {@code manufacturerData} is the manufacturerId.
          *
          * @throws IllegalArgumentException If the {@code manufacturerId} is invalid.
          */
@@ -718,6 +799,30 @@ public final class ScanFilter implements Parcelable {
         }
 
         /**
+         * Set filter on partial transport block with mask.
+         * <p>
+         * The {@code transportBlockMask} bytes must have the same length of
+         * {@code transportBlock} bytes.
+         *
+         * @throws IllegalArgumentException If the {@code transportBlock} is null or
+         * {@code transportBlock} and {@code transportBlockMask} have different byte lengths.
+         */
+        public Builder setTransportBlock(TransportBlock transportBlock,
+                TransportBlock transportBlockMask) {
+            if (transportBlock == null) {
+                throw new IllegalArgumentException("transportBlock is null");
+            }
+            if (mTransportBlockMask != null) {
+                if (mTransportBlock.getLength() != mTransportBlockMask.getLength()) {
+                    throw new IllegalArgumentException("transportBlock and Mask size mismatch");
+                }
+            }
+            mTransportBlock = transportBlock;
+            mTransportBlockMask = transportBlockMask;
+            return this;
+        }
+
+        /**
          * Build {@link ScanFilter}.
          *
          * @throws IllegalArgumentException If the filter cannot be built.
@@ -727,7 +832,8 @@ public final class ScanFilter implements Parcelable {
                     mServiceUuid, mUuidMask, mServiceSolicitationUuid,
                     mServiceSolicitationUuidMask,
                     mServiceDataUuid, mServiceData, mServiceDataMask,
-                    mManufacturerId, mManufacturerData, mManufacturerDataMask);
+                    mManufacturerId, mManufacturerData, mManufacturerDataMask,
+                    mTransportBlock, mTransportBlockMask);
         }
     }
 }

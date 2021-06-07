@@ -522,6 +522,16 @@ public final class BluetoothLeAdvertiser {
         if (data.getIncludeDeviceName() && mBluetoothAdapter.getName() != null) {
             size += OVERHEAD_BYTES_PER_FIELD + mBluetoothAdapter.getName().length();
         }
+        if (data.getTransportBlocks() != null) {
+            int transportDataLength = 0;
+            for (TransportBlock transportBlock : data.getTransportBlocks()) {
+                if (transportBlock != null) {
+                    transportDataLength += transportBlock.getTransportDataLength()
+                        + TransportBlock.TRANSPORT_DATA_OFFSET;
+                }
+            }
+            size += OVERHEAD_BYTES_PER_FIELD + transportDataLength;
+        }
         return size;
     }
 

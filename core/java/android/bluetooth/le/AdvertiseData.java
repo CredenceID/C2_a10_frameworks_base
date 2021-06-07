@@ -47,17 +47,20 @@ public final class AdvertiseData implements Parcelable {
     private final Map<ParcelUuid, byte[]> mServiceData;
     private final boolean mIncludeTxPowerLevel;
     private final boolean mIncludeDeviceName;
+    private final List<TransportBlock> mTransportBlocks;
 
     private AdvertiseData(List<ParcelUuid> serviceUuids,
             SparseArray<byte[]> manufacturerData,
             Map<ParcelUuid, byte[]> serviceData,
             boolean includeTxPowerLevel,
-            boolean includeDeviceName) {
+            boolean includeDeviceName,
+            List<TransportBlock> transportBlocks) {
         mServiceUuids = serviceUuids;
         mManufacturerSpecificData = manufacturerData;
         mServiceData = serviceData;
         mIncludeTxPowerLevel = includeTxPowerLevel;
         mIncludeDeviceName = includeDeviceName;
+        mTransportBlocks = transportBlocks;
     }
 
     /**
@@ -98,12 +101,19 @@ public final class AdvertiseData implements Parcelable {
     }
 
     /**
+     * Returns a list of transport blocks
+     */
+    public List<TransportBlock> getTransportBlocks() {
+        return mTransportBlocks;
+    }
+
+    /**
      * @hide
      */
     @Override
     public int hashCode() {
         return Objects.hash(mServiceUuids, mManufacturerSpecificData, mServiceData,
-                mIncludeDeviceName, mIncludeTxPowerLevel);
+                mIncludeDeviceName, mIncludeTxPowerLevel, mTransportBlocks);
     }
 
     /**
@@ -123,7 +133,8 @@ public final class AdvertiseData implements Parcelable {
                     other.mManufacturerSpecificData)
                 && BluetoothLeUtils.equals(mServiceData, other.mServiceData)
                 && mIncludeDeviceName == other.mIncludeDeviceName
-                && mIncludeTxPowerLevel == other.mIncludeTxPowerLevel;
+                && mIncludeTxPowerLevel == other.mIncludeTxPowerLevel
+                && Objects.equals(mTransportBlocks, other.mTransportBlocks);
     }
 
     @Override
@@ -132,7 +143,8 @@ public final class AdvertiseData implements Parcelable {
                 + BluetoothLeUtils.toString(mManufacturerSpecificData) + ", mServiceData="
                 + BluetoothLeUtils.toString(mServiceData)
                 + ", mIncludeTxPowerLevel=" + mIncludeTxPowerLevel + ", mIncludeDeviceName="
-                + mIncludeDeviceName + "]";
+                + mIncludeDeviceName
+                + ", mTransportBlocks=" + mTransportBlocks + "]";
     }
 
     @Override
@@ -157,6 +169,8 @@ public final class AdvertiseData implements Parcelable {
         }
         dest.writeByte((byte) (getIncludeTxPowerLevel() ? 1 : 0));
         dest.writeByte((byte) (getIncludeDeviceName() ? 1 : 0));
+        dest.writeTypedArray(mTransportBlocks.toArray(
+                new TransportBlock[mTransportBlocks.size()]), flags);
     }
 
     public static final @android.annotation.NonNull Parcelable.Creator<AdvertiseData> CREATOR =
@@ -188,6 +202,11 @@ public final class AdvertiseData implements Parcelable {
                     }
                     builder.setIncludeTxPowerLevel(in.readByte() == 1);
                     builder.setIncludeDeviceName(in.readByte() == 1);
+                    ArrayList<TransportBlock> transportBlocks =
+                            in.createTypedArrayList(TransportBlock.CREATOR);
+                    for (TransportBlock transportBlock : transportBlocks) {
+                        builder.addTransportBlock(transportBlock);
+                    }
                     return builder.build();
                 }
             };
@@ -202,6 +221,7 @@ public final class AdvertiseData implements Parcelable {
         private Map<ParcelUuid, byte[]> mServiceData = new ArrayMap<ParcelUuid, byte[]>();
         private boolean mIncludeTxPowerLevel;
         private boolean mIncludeDeviceName;
+        private List<TransportBlock> mTransportBlocks = new ArrayList<TransportBlock>();
 
         /**
          * Add a service UUID to advertise data.
@@ -276,11 +296,25 @@ public final class AdvertiseData implements Parcelable {
         }
 
         /**
+         * Add a transport block to advertise data.
+         *
+         * @param transportBlock transport block data to be added
+         * @throws IllegalArgumentException If the {@code transportBlock} is null.
+         */
+        public Builder addTransportBlock(TransportBlock transportBlock) {
+            if (transportBlock == null) {
+                throw new IllegalArgumentException("transportBlock is null");
+            }
+            mTransportBlocks.add(transportBlock);
+            return this;
+        }
+
+        /**
          * Build the {@link AdvertiseData}.
          */
         public AdvertiseData build() {
             return new AdvertiseData(mServiceUuids, mManufacturerSpecificData, mServiceData,
-                    mIncludeTxPowerLevel, mIncludeDeviceName);
+                    mIncludeTxPowerLevel, mIncludeDeviceName, mTransportBlocks);
         }
     }
 }
