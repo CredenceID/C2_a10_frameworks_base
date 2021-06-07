@@ -179,6 +179,15 @@ public class WifiAwareManager {
         }
     }
 
+    /** @hide */
+    public boolean isEnabled() {
+        try {
+            return mService.isAwareEnabled();
+        } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
+        }
+    }
+
     /**
      * Returns the characteristics of the Wi-Fi Aware interface: a set of parameters which specify
      * limitations on configurations, e.g. the maximum service name length.
