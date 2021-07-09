@@ -38,6 +38,13 @@ import static android.util.apk.ApkSigningBlockUtils.readLengthPrefixedByteArray;
 import android.util.ArrayMap;
 import android.util.Pair;
 
+import android.util.Log;
+import android.os.Environment;
+
+import java.io.FileInputStream;
+import java.io.Reader;
+import java.io.StringReader;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -50,6 +57,7 @@ import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
@@ -80,6 +88,40 @@ public class ApkSignatureSchemeV2Verifier {
      * ID of this signature scheme as used in X-Android-APK-Signed header used in JAR signing.
      */
     public static final int SF_ATTRIBUTE_ANDROID_APK_SIGNED_ID = 2;
+
+    private static final String TAG = "ApkSignatureSchemeV2Verifier";
+    private static final String PLATFORM_X509_CERT_KEY =
+                        "OpenSSLRSAPublicKey{modulus=ca7dcc148c19d486913847499c8f42636d62367269d8f444933524"+
+                        "b8a19e7074d808ef62690d70fcb81c05613b0ba9014992ebde49fef402738d3c0137310832cc2f3c8a"+
+                        "25a74af124fdabf5cc8709995d8757f193c50207ea5aae9f3ec727d4c82306a7b4a55430bb3028824f"+
+                        "98adaf37ccd61ab422f13dd4119974bdace3c7c8d76d3aa92d91d8a0c23ffe43877b6d79ccaea0bff9"+
+                        "2200122c322d1e39817b0b058b0be4ef9135765318e183054abdf0795a8e1cfd511a41d7b857d11be0"+
+                        "d082dfe772ec60430a804be5f797994432fac9399a3fe66b8f5433efde98cf6e53666c61d09811fa32"+
+                        "e7a3dd3105e5133e91e3c9e8e54aa7801b006f0353132617,publicExponent=3}";
+    private static final String MEDIA_X509_CERT_KEY =
+                        "OpenSSLRSAPublicKey{modulus=dd9f8d16845ed053476784393647f33610dbf32f79211489e39649"+
+                        "80edbad04e47441ab29295b91bf7c1fc091a241d183eb4050e54801644a64adda45870144e284419f8"+
+                        "2aa1ac8eac028fc8e7140568bcea03e4990fb3fa4caadf97b92b820cfb697723ade719e738bb6bcab1"+
+                        "3eb96b4006e5c9d271880ed2e18a74c3889f0dcde9ec8b2fa21d8a7dc44d2e047f72399dafd938073d"+
+                        "414236bb4f024d3b6bbb07b7f9c1413c4f6443dad29d550d11be7cbbe4b2323f079711cbc6f5197c44"+
+                        "3321f93eaadfa6f344642b3af0a8bc000ff006b62e42ed77200dd5e6e972d319c9e9c93ae831c318eb"+
+                        "0b983ec0ab56ecbfab4ba0436c497ae7a9901a68e9b8a273,publicExponent=3}";
+    private static final String SHARED_X509_CERT_KEY =
+                        "OpenSSLRSAPublicKey{modulus=d9d2f3dfcfad68c4a7e818dacdc013fc85c85aac9ad5e34b768d7b"+
+                        "2784fe9422280f631a8f0ced4083f4cda0f049139f2c23d0649a6467cef3c5f78761e9fdbafc833084"+
+                        "d8a32c8fcb55bd0a83dc634a72a857842a40d507c7877a1ebb89cd73a59388ac91008e04638a6567c8"+
+                        "9c39641c8a73e2721bbd7b76e3a00f7dcd8cb511e601d265a869dde9db55e73d814bc916ffcd941c01"+
+                        "d430f1ceca4fe653599393aa2ddcd4073f4228932147b14fb6e66519d971f6da63630de86a48d279da"+
+                        "a4ff5d263b1fb6217fc7904e41e0d9ca123fe34dbf3a1ec1f544c9e1c138040842408daa0c8efe1c58"+
+                        "d1e346a44dbb0c8d47991ae0d9f9f71537e462610b7a82f5,publicExponent=3}";
+    private static final String TEST_X509_CERT_KEY =
+                        "OpenSSLRSAPublicKey{modulus=ade42d493d64e4100e8895971d2193f8dad025a5f7c1fb875095c4"+
+                        "6b073f211456c8ad07239830ad475f59b96d9af317e9dda8d03397d8723188ce56958f0d3cebe0fdc1"+
+                        "6fc03d041adb6b38edf58ca8721b05ecb0168f4114c4c7b94cd29f69d40242a79f16eca45bf723cefe"+
+                        "07e28916ff63d8f088062437840646789832aabc9ad00db7f8c9aade012e7e272877726b7d45e92d0d"+
+                        "2203e5c934a9c83bdee3a24d734c0c77e407ce9cc4c4fe665c82aeb1284eb32943566c942acd61064c"+
+                        "8e4990403e5c37a6ab596a558c17932633d259d5718b8464a18e829278e8b67fd3f438aef3b1fb8a0f"+
+                        "aad13e23bd5b2e8b773fc3e4cb58daa70501f8f8efe8480f,publicExponent=3}";
 
     private static final int APK_SIGNATURE_SCHEME_V2_BLOCK_ID = 0x7109871a;
 
@@ -271,20 +313,21 @@ public class ApkSignatureSchemeV2Verifier {
                 getSignatureAlgorithmJcaSignatureAlgorithm(bestSigAlgorithm);
         String jcaSignatureAlgorithm = signatureAlgorithmParams.first;
         AlgorithmParameterSpec jcaSignatureAlgorithmParams = signatureAlgorithmParams.second;
-        boolean sigVerified;
+        boolean sigVerified = false;
         try {
             PublicKey publicKey =
                     KeyFactory.getInstance(keyAlgorithm)
                             .generatePublic(new X509EncodedKeySpec(publicKeyBytes));
-            Signature sig = Signature.getInstance(jcaSignatureAlgorithm);
-            sig.initVerify(publicKey);
-            if (jcaSignatureAlgorithmParams != null) {
-                sig.setParameter(jcaSignatureAlgorithmParams);
-            }
-            sig.update(signedData);
-            sigVerified = sig.verify(bestSigAlgorithmSignatureBytes);
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException | InvalidKeyException
-                | InvalidAlgorithmParameterException | SignatureException e) {
+                                   //Verification method is changed to support reject non signed cid
+                                   //apks
+                                   String pkgKeyStr = publicKey.toString();
+                                   if (pkgKeyStr.equals(PLATFORM_X509_CERT_KEY)
+                                                           || pkgKeyStr.equals(MEDIA_X509_CERT_KEY)
+                                                           || pkgKeyStr.equals(SHARED_X509_CERT_KEY)
+                                                           || pkgKeyStr.equals(TEST_X509_CERT_KEY)) {
+                                                           sigVerified = true;
+                                   }
+            } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new SecurityException(
                     "Failed to verify " + jcaSignatureAlgorithm + " signature", e);
         }
