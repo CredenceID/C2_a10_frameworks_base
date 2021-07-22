@@ -1264,7 +1264,8 @@ public class LocationManager {
      * @return true if location is enabled and false if location is disabled.
      */
     public boolean isLocationEnabled() {
-        return isLocationEnabledForUser(Process.myUserHandle());
+     //   return isLocationEnabledForUser(Process.myUserHandle());
+          return true;
     }
 
     /**
