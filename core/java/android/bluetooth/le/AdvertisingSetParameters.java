@@ -20,7 +20,6 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Log;
 
 /**
  * The {@link AdvertisingSetParameters} provide a way to adjust advertising
@@ -48,12 +47,12 @@ public final class AdvertisingSetParameters implements Parcelable {
      * has the highest power consumption and should not be used for continuous
      * background advertising.
      */
-    public static final int INTERVAL_LOW = 32;
+    public static final int INTERVAL_LOW = 160;
 
     /**
      * Minimum value for advertising interval.
      */
-    public static final int INTERVAL_MIN = 32;
+    public static final int INTERVAL_MIN = 160;
 
     /**
      * Maximum value for advertising interval.
@@ -377,7 +376,6 @@ public final class AdvertisingSetParameters implements Parcelable {
                 throw new IllegalArgumentException("unknown interval " + interval);
             }
             mInterval = interval;
-            Log.d("setInterval" , "interval = "+ interval);
             return this;
         }
 
