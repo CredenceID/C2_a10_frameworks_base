@@ -134,7 +134,7 @@ public final class BluetoothLeAdvertiser {
             } else if (settings.getMode() == AdvertiseSettings.ADVERTISE_MODE_BALANCED) {
                 parameters.setInterval(400); // 250ms
             } else if (settings.getMode() == AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY) {
-                parameters.setInterval(160); // 100ms
+                parameters.setInterval(32); // 20ms
             }
 
             if (settings.getTxPowerLevel() == AdvertiseSettings.ADVERTISE_TX_POWER_ULTRA_LOW) {
