@@ -466,10 +466,6 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
         mContext.registerReceiver(mReceiver, filter);
 
         loadStoredNameAndAddress();
-
-        /* Update persistBluetoothSetting to turn ON Bluetooth during boot */
-        persistBluetoothSetting(BLUETOOTH_ON_BLUETOOTH);
-
         if (isBluetoothPersistedStateOn()) {
             if (DBG) {
                 Slog.d(TAG, "Startup: Bluetooth persisted state is ON.");
