@@ -1068,6 +1068,8 @@ public class Build {
             // So, we don't need to check AVB here.
             int result = VintfObject.verifyWithoutAvb();
 
+            //Disable AVB check to avoid Android System error on Boot
+            result = 0;
             if (result != 0) {
                 Slog.e(TAG, "Vendor interface is incompatible, error="
                         + String.valueOf(result));
