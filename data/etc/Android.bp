@@ -41,6 +41,15 @@ prebuilt_etc {
     src: "privapp-permissions-platform.xml",
 }
 
+
+prebuilt_etc {
+    name: "privapp_whitelist_com.android.camera2",
+    product_specific: true,
+    sub_dir: "permissions",
+    src: "com.android.camera2.xml",
+    filename_from_src: true,
+}
+
 prebuilt_etc {
     name: "privapp_whitelist_com.idemia.mdocreader",
     product_specific: true,
