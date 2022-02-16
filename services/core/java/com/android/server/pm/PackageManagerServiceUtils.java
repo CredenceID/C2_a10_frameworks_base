@@ -614,9 +614,10 @@ public class PackageManagerServiceUtils {
             }
 
             if (!match) {
-                throw new PackageManagerException(INSTALL_FAILED_UPDATE_INCOMPATIBLE,
+/*                throw new PackageManagerException(INSTALL_FAILED_UPDATE_INCOMPATIBLE,
                         "Package " + packageName +
-                        " signatures do not match previously installed version; ignoring!");
+                        " signatures do not match previously installed version; ignoring!");*/
+                    System.out.println("Previous key is not matched, Continuing with new key!");
             }
         }
         // Check for shared user signatures

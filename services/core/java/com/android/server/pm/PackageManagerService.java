@@ -17999,16 +17999,6 @@ public class PackageManagerService extends IPackageManager.Stub
                                     "New package not signed by keys specified by upgrade-keysets: "
                                             + pkgName11);
                         }
-                    } else {
-                        // default to original signature matching
-                        if (!pkg.mSigningDetails.checkCapability(oldPackage.mSigningDetails,
-                                SigningDetails.CertCapabilities.INSTALLED_DATA)
-                                && !oldPackage.mSigningDetails.checkCapability(
-                                pkg.mSigningDetails,
-                                SigningDetails.CertCapabilities.ROLLBACK)) {
-                            throw new PrepareFailure(INSTALL_FAILED_UPDATE_INCOMPATIBLE,
-                                    "New package has a different signature: " + pkgName11);
-                        }
                     }
 
                     // don't allow a system upgrade unless the upgrade hash matches

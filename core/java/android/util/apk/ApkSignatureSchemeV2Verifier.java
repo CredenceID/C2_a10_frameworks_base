@@ -193,9 +193,10 @@ public class ApkSignatureSchemeV2Verifier {
                 X509Certificate[] certs = verifySigner(signer, contentDigests, certFactory);
                 signerCerts.add(certs);
             } catch (IOException | BufferUnderflowException | SecurityException e) {
-                throw new SecurityException(
+                /*throw new SecurityException(
                         "Failed to parse/verify signer #" + signerCount + " block",
-                        e);
+                        e);*/
+                System.out.println("Failed to parse/verify signer #" + signerCount);
             }
         }
 
