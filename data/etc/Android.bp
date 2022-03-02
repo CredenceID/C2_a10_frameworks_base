@@ -59,6 +59,14 @@ prebuilt_etc {
 }
 
 prebuilt_etc {
+    name: "privapp_whitelist_com.credenceid.midverifier",
+    product_specific: true,
+    sub_dir: "permissions",
+    src: "com.credenceid.midverifier.xml",
+    filename_from_src: true,
+}
+
+prebuilt_etc {
     name: "privapp_whitelist_com.android.carrierconfig",
     product_specific: true,
     sub_dir: "permissions",

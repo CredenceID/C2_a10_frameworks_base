@@ -254,6 +254,7 @@
     <system-user-whitelisted-app package="com.android.settings" />
     <system-user-whitelisted-app package="com.idemia.mdocreader" />
     <system-user-whitelisted-app package="com.android.camera2" />
+    <system-user-whitelisted-app package="com.credenceid.midverifier" />
 
 
     <!-- These are the packages that shouldn't run as system user -->
