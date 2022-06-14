@@ -1233,7 +1233,7 @@ public class UsbDeviceManager implements ActivityTaskManagerInternal.ScreenObser
             if (isAdbEnabled()) {
                 return UsbManager.FUNCTION_ADB;
             } else {
-                return UsbManager.FUNCTION_ACCESSORY;
+                return UsbManager.FUNCTION_MTP;
             }
         }
 
@@ -1899,7 +1899,6 @@ public class UsbDeviceManager implements ActivityTaskManagerInternal.ScreenObser
         }
 
         private void setUsbConfig(long config, boolean chargingFunctions) {
-            String USB_CONFIG_PROPERTY = "sys.usb.config";
             if (true) Slog.d(TAG, "setUsbConfig(" + config + ") request:" + ++mCurrentRequest);
             /**
              * Cancel any ongoing requests, if present.
@@ -1919,15 +1918,11 @@ public class UsbDeviceManager implements ActivityTaskManagerInternal.ScreenObser
                          * Start adbd if ADB function is included in the configuration.
                          */
                         setSystemProperty(CTL_START, ADBD);
-                        SystemProperties.set(USB_CONFIG_PROPERTY, "none");
-                        SystemProperties.set(USB_CONFIG_PROPERTY, "adb");
                     } else {
                         /**
                          * Stop adbd otherwise.
                          */
                         setSystemProperty(CTL_STOP, ADBD);
-                        SystemProperties.set(USB_CONFIG_PROPERTY, "none");
-                        SystemProperties.set(USB_CONFIG_PROPERTY, "accessory");
                     }
                     UsbGadgetCallback usbGadgetCallback = new UsbGadgetCallback(mCurrentRequest,
                             config, chargingFunctions);
